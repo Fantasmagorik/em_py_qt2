@@ -9,8 +9,8 @@ import sys
 from PyQt5 import QtWidgets, QtCore, QtGui
 import json
 import conf
-colors = ['#eeeeee', '#00ff00', '#eeeeee']
-limits = [3.285, 3.287]
+colors = ['#00ff00', '#ff7033', '#ff0000']
+limits = [3.287, 3.285]
 def jsonRefresh():
     global jdata
     print("works")
@@ -30,7 +30,9 @@ class configureWindow(QtWidgets.QMainWindow, conf.Ui_wnd_configure):
         for button in self.buttonGroup.buttons():
             button.setStyleSheet("background-color:" + colors[x])
             x -= 1
-        #self.ed
+
+        self.edt_crytical.setText(str(limits[1]))
+        self.edt_warning.setText(str(limits[0]))
         # self.edt_ok.setInputMask("000")
         # lineEdit->setValidator(new QDoubleValidator(-999.0, 999.0, 2, lineEdit));
         self.edt_crytical.setValidator(self.doubleValidator)  # , self.edt_crytical))
@@ -49,6 +51,9 @@ class configureWindow(QtWidgets.QMainWindow, conf.Ui_wnd_configure):
     def closeEvent(self, event):
         # print("closing..")
         # Battery.reshowWin(self)
+        #save limits value
+        limits[0] = float(self.edt_warning.text())
+        limits[1] = float(self.edt_crytical.text())
         self.close()
         Battery.reshowWin(self)
 
@@ -95,6 +100,10 @@ class Battery(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.paintCells()
         self.refreshCells()
         self.btn_graphic_sett.clicked.connect(self.settings)
+        self.tableWidget.setColumnCount(4)
+        self.tableWidget.setRowCount(10)
+        #self.tableWidget.
+
 
     def reshowWin(self):
         #self.close()
@@ -113,7 +122,6 @@ class Battery(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         #battery charge
         value = int(float(jdata['bt1']['42']['Actual Charge %']) * 10)
         self.progressBar.setValue(value)
-
     def paintCells(self):
         #self.prBar = QtWidgets.QProgressBar()
         #self.cellsPlace.addWidget()
@@ -127,6 +135,7 @@ class Battery(QtWidgets.QMainWindow, gui.Ui_MainWindow):
             CellsImage[i].setOrientation(2)
             CellsImage[i].setMaximum(cellMaxValue)
             CellsImage[i].setMinimum(cellMinValue)
+            CellsImage[i].setTextVisible(0)
             CellsImage[i].setGeometry(lastHPosition, 0, cellWidth, cellHeight)
             #CellsImage[i].setStyleSheet(#"QProgressBar {border: 2px solid grey;border-radius:8px;padding:1px}"
                                        #"QProgressBar::chunk {background:#ff1100}")
@@ -142,8 +151,15 @@ class Battery(QtWidgets.QMainWindow, gui.Ui_MainWindow):
                 phrase = 'Cell Voltage_'
             str_value = keyData[phrase + str(i + 1)]
             value = float(str_value)
+            #define the battery level : ok, alarm or Crytical
+            if value <= limits[1]:
+                level = 2
+            elif value <= limits[0]:
+                level = 1
+            else:
+                level = 0
             CellsImage[i].setValue(int(value * 1000))
-            c_color = "QProgressBar::chunk {background:" + colors[1] + "}"
+            c_color = "QProgressBar::chunk {background:" + colors[level] + "}"
             CellsImage[i].setStyleSheet(c_color)
             #CellsImage[i].setStyleSheet("QProgressBar::chunk {background:#ff1100}")
             #print(int(value * 1000))
